@@ -11,8 +11,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -46,26 +48,64 @@ public class MessageDAOImpl implements MessageDAO {
                 Sort.by(Sort.Direction.ASC, "send_date"));
 
         Query query = new Query(criteria).with(pageRequest);
-        return template.find(null, Message.class);
+        return template.find(query, Message.class);
     }
 
+    /**
+     * 根据id查询
+     *
+     * @param id
+     * @return
+     */
     @Override
     public Message findMessageById(String id) {
-        return null;
+        return this.template.findById(new ObjectId(id), Message.class);
     }
 
+    /**
+     * 根据id更新会话是否已读状态
+     *
+     * @param id
+     * @param status
+     * @return
+     */
     @Override
     public UpdateResult updateMessageState(ObjectId id, Integer status) {
-        return null;
+
+        Query query = Query.query(Criteria.where("id").is(id));
+        Update update = Update.update("status", status);
+        //更新发送时间
+        if (status.intValue() == 1) {
+            update.set("send_date", new Date());
+            //更新阅读时间
+        } else if (status.intValue() == 2) {
+            update.set("read_date", new Date());
+        }
+        return this.template.updateFirst(query, update, Message.class);
     }
 
+    /**
+     * 保存发出的消息
+     *
+     * @param message
+     * @return
+     */
     @Override
     public Message saveMessage(Message message) {
-        return null;
+        message.setId(ObjectId.get());
+        message.setSendDate(new Date());
+        message.setStatus(1);
+        return this.template.save(message);
     }
 
+    /**
+     * 根据id删除消息
+     *
+     * @param id
+     * @return
+     */
     @Override
     public DeleteResult deleteMessage(String id) {
-        return null;
+        return this.template.remove(Query.query(Criteria.where("id").is(id)), Message.class);
     }
 }

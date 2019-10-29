@@ -32,7 +32,7 @@ public class Message {
      * 1-未读 2 - 已读
      */
     @Indexed //添加索引
-    private Integer state;
+    private Integer status;
 
     @Field("send_date") //指定mongodb数据库字段名
     @Indexed
